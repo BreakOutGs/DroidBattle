@@ -60,9 +60,14 @@ public class Player {
         return name;
     }
     public void Move(){
+        ArrayList<Droid> deaddroids = new ArrayList<Droid>(); 
         for (Droid droid : droids) {
-            droid.NextMove();
+            if(!droid.isDead())
+                droid.NextMove();
+            else
+                deaddroids.add(droid);
         }
+        droids.removeAll(deaddroids);
     }
     public String generateSaveString(String separator){
         String saveString="";
@@ -121,5 +126,11 @@ public class Player {
         var testString = loadString.substring(lastSeparatorIndex, loadString.length());
         l_ptype = PlayerType.valueOf(testString);
         return new Player(l_name, l_currency, l_droids, l_ptype);
+    }
+    public boolean IsLost(){
+        for (Droid droid : droids) {
+            if(!droid.isDead()) return false;
+        }
+        return true;
     }
 }

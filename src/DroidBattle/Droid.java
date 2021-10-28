@@ -32,7 +32,7 @@ public abstract class Droid {
 
     private boolean isDead;
     
-    protected ArrayList<DroidAbility> abilites;
+    protected ArrayList<DroidAbility> abilities;
 
     public Droid(String Type, int MaxHealth, int Energy, int Damage, int CurrencyCost) {
         Droids_Count++;
@@ -45,6 +45,7 @@ public abstract class Droid {
         this.currencycost = CurrencyCost;
         this.maxEnergy = Energy;
         this.currentEnergy = maxEnergy;
+        this.abilities = new ArrayList<DroidAbility>();
     }
 
     public String PrintInfo() {
@@ -56,7 +57,7 @@ public abstract class Droid {
         return print_str;
     }
     public String PrintShortInfo(){
-        return name+"- "+type+" HP:"+ColorSystem.ANSI_RED+String.valueOf(currenthp)+"/"+String.valueOf(maxhp)+ColorSystem.ANSI_RESET+
+        return name+" - "+type+" HP:"+ColorSystem.ANSI_RED+String.valueOf(currenthp)+"/"+String.valueOf(maxhp)+ColorSystem.ANSI_RESET+
         " \t Energy: "+ColorSystem.ANSI_BLUE+String.valueOf(currentEnergy)+"/"+String.valueOf(maxEnergy)+ColorSystem.ANSI_RESET;
     }
 
@@ -77,7 +78,11 @@ public abstract class Droid {
         enemy.TakeDamage(damage);
         return result;
     }
-
+    public AbilityResult ModifiedAttack(Droid enemy, double modificator){
+        AbilityResult result = new AbilityResult();
+        enemy.TakeDamage((int)(damage*modificator));
+        return result;
+    }
     public int getRepairCost(){
         int repPrice = 0;
         float pricePerHp = 0.05f; 
@@ -112,19 +117,31 @@ public abstract class Droid {
     public int getCurrentEnergy() {
         return currentEnergy;
     }
+    public void setCurrentEnergy(int Energy){
+        if(Energy<0) return;
+        if(Energy>maxEnergy){
+            currentEnergy = maxEnergy;
+        }
+        else currentEnergy = Energy;
+    }
     public int getCurrenthp() {
         return currenthp;
     }
     public ArrayList<DroidAbility> getAbilites() {
-        return abilites;
+        return abilities;
     }
     public void setAbilites(ArrayList<DroidAbility> abilites) {
-        this.abilites = abilites;
+        this.abilities = abilites;
     }
     public void NextMove(){
         currentEnergy = maxEnergy;
     }
     public void generateShield(int ShieldCapacity){
-        currEShieldCapacity = ShieldCapacity;
+        currEShieldCapacity += ShieldCapacity;
     }
+    public boolean isDead(){
+        if(currenthp<=0) return true;
+        else return false;
+    }
+
 }

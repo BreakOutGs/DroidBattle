@@ -46,7 +46,15 @@ public abstract class DroidAbility {
         return abilityresult;
     }
     
-    public abstract AbilityResult Use();
+    public  AbilityResult Use(){
+        AbilityResult result = new AbilityResult();
+        if(owner.getCurrentEnergy()>=getEnergyCost()){
+             owner.setCurrentEnergy(owner.getCurrentEnergy()-getEnergyCost());
+             result.setSuccessful(true);
+        }
+        else result.setSuccessful(false);
+        return result;
+    }
     
     public abstract DroidAbility Clone();
     

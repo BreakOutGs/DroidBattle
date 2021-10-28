@@ -12,7 +12,11 @@ public class ShieldGeneration extends DroidAbility {
     }
     @Override
     public AbilityResult Use() {
-        super.owner.generateShield(10);
+        int generatedShieldCapacity = 10;
+        AbilityResult result = super.Use();
+        if(result.getSuccessfulStatus()){
+            super.owner.generateShield(generatedShieldCapacity);
+         }
         return null;
     }
 
