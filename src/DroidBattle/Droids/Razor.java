@@ -8,7 +8,7 @@ public class Razor extends Droid {
 
     public Razor(){
         super("Razor", 125, 1, 20, 20);
-        super.abilites.add(new CuttingRazors());
+        super.abilities.add(new CuttingRazors());
     }
 
     @Override

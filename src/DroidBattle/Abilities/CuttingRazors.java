@@ -17,11 +17,16 @@ public class CuttingRazors extends DroidAbility{
 
     @Override
     public AbilityResult Use() {
-        
-        for(Droid enemie : super.enemies){
-            enemie.TakeDamage(damage);
+        AbilityResult result = super.Use();
+        if(result.getSuccessfulStatus()){
+            for(Droid enemy : super.enemies){
+           owner.ModifiedAttack(enemy, 1.5);
         }
-        return null;
+
+        }
+        
+       
+        return result;
     }
 
     @Override

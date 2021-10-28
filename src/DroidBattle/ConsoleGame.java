@@ -8,6 +8,7 @@ import DroidBattle.Droids.Razor;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.time.temporal.Temporal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -372,13 +373,16 @@ public class ConsoleGame {
         String s = "";
         int n = 0;
         int inputcode = 0;
+        String tempColor = ColorSystem.ANSI_RESET;
         ClearConsole();
         s += "\t\t\t" + GameName + " - " + getGameVersionS() + "\n\n";
         s += "\n " + String.valueOf(n) + ". Back \n";
         s += "\n Select Droid:";
         n++;
         for (Droid ldroid : currentPlayer.get_Droids()) {
-            s += "\n " + String.valueOf(n) + ". " + ldroid.getName() + "-" + ldroid.getType();
+            if(ldroid.getCurrentEnergy()<=0) tempColor = ColorSystem.ANSI_BRIGHTBLACK;
+            else tempColor = ColorSystem.ANSI_RESET;
+            s += "\n %s %d. %s %s ".formatted(tempColor,n,ldroid.getName(),ldroid.getType());
             n++;
         }
         s += "\n";
@@ -409,21 +413,44 @@ public class ConsoleGame {
         s += "\n %s".formatted(menuTitle);
         n++;
         for (Player lPlayer : players) {
-            if(lPlayer.getName()==currentPlayer.getName()) continue;
-            s += "\n %d %s %s ".formatted(String.valueOf(n),". ", lPlayer.getName());
+            if(lPlayer.getName()==currentPlayer.getName()) {n++;continue;}
+            s += "\n %d %s %s ".formatted(n,". ", lPlayer.getName());
             n++;
         }
         s += "\n";
         System.out.println(s);
         inputcode = keyboard.nextInt();
         if(inputcode<0 || inputcode>players.size() || currentPlayerId+1==inputcode) 
-            ShowSelectPlayer(players, menuTitle);
+            return ShowSelectPlayer(players, menuTitle);
         if(inputcode == 0) 
             return toReturn; 
         else 
             return players.get(inputcode-1);
 
     }
+   
+    public Droid ShowSelectDroid(ArrayList<Droid> droids, String menuTitle){
+        Droid toReturn = null;
+        String s = "";
+        int n = 0;
+        int inputcode = 0;
+        ClearConsole();
+        s += "\t\t\t" + GameName + " - " + getGameVersionS() + "\n\n";
+        s += "\n " + String.valueOf(n) + ". Back \n";
+        s += "\n %s".formatted(menuTitle);
+        n++;
+        for (Droid lDroid : droids) {
+            s += "\n %d %s %s ".formatted(n,". ", lDroid.PrintShortInfo());
+            n++;
+        }
+        s += "\n";
+        System.out.println(s);
+        inputcode = keyboard.nextInt();
+        if(inputcode<0 || inputcode>droids.size()) return ShowSelectDroid(droids, menuTitle);
+        if(inputcode == 0) return toReturn; else return droids.get(inputcode-1);
+
+    }
+    
    
     public DroidAbility ShowSelectAbility(ArrayList<DroidAbility> abilities, String menuTitle){
         DroidAbility toReturn = null;
@@ -436,7 +463,7 @@ public class ConsoleGame {
         s += "\n %s".formatted(menuTitle);
         n++;
         for (DroidAbility lPlayer : abilities) {
-            s += "\n %d %s %s ".formatted(String.valueOf(n),". ", lPlayer.getName());
+            s += "\n %d %s %s ".formatted(n,". ", lPlayer.getName());
             n++;
         }
         s += "\n";
@@ -472,20 +499,30 @@ public class ConsoleGame {
             break;
         case 2:
             tempAbility = ShowSelectAbility(droid.getAbilites(), "Select ability:");
+            tempAbility.setOwner(droid);
                 switch(tempAbility.aimType){
                     case Enemies:
                       tempAbility.setEnemies(ShowSelectPlayer(lvl.getPlayers(), "Select enemy team:").get_Droids());
-                      
                     break;
-                    case Enemy:break;
+                    case Enemy:
+                        tempAbility.setAimed(ShowSelectDroid(
+                            ShowSelectPlayer(lvl.getPlayers(), "Select player to choose his droid:").get_Droids(), 
+                            "Select droid to use ability %s on".formatted(tempAbility.getName())
+                            ));
+                    break;
                     case Self:
-                        tempAbility.setOwner(droid);
+                       
                         break;
-                    case Allie:break;
-                    case Team:break;
+                    case Allie:
+                        tempAbility.setAimed(ShowSelectDroid(currentPlayer.get_Droids(), "Select droid to use %s on".formatted(tempAbility.getName())));
+                        break;
+                    case Team:
+                        tempAbility.setAimed(ShowSelectDroid(currentPlayer.get_Droids(), "Select droid to use %s on".formatted(tempAbility.getName())));
+                    break;
                     default: break;
                 }
                 tempAbility.Use();
+                ShowBattleMenu();
                 break;
         default:
             ShowDroidManagment(droid);
@@ -543,6 +580,8 @@ public class ConsoleGame {
 
     private void NextMove() {
 
+        int winnerId = GetWinnerId();
+
         if (currentPlayerId + 1 < lvl.getPlayers().size())
             currentPlayerId++;
         else
@@ -551,8 +590,12 @@ public class ConsoleGame {
         currentPlayer.Move();
         switch (currentPlayer.getPlayerType()) {
         case User:
-            ShowBattleMenu();
+        if(winnerId>=0) ShowGameOverMenu(currentPlayer);
+        else{
+             ShowBattleMenu();
             break;
+        }
+           
         case Computer:
             StartComputerMove();
             break;
@@ -563,7 +606,43 @@ public class ConsoleGame {
         }
 
     }
-
+    private int GetWinnerId(){
+        int id = 0;
+        int alivecounter = 0;
+        for (Player lplayer : lvl.getPlayers()) {
+            if(!lplayer.IsLost()){
+                alivecounter++;    
+                id = lvl.getPlayers().indexOf(lplayer);
+            }  
+        }
+        switch(alivecounter){
+            case 0: return -1;
+            case 1: return id;
+            default: return -1;
+        }
+    }
+    
+    private void ShowGameOverMenu(Player player){
+        Player toReturn = null;
+        String s = "";
+        int n = 0;
+        int inputcode = -1;
+        String menuTitle;
+        if(player.IsLost()){
+            menuTitle = "Game over: you LOST. Press 0 to show main menu.";
+        }
+        else menuTitle = "Game over: you WON. Press 0 to show main menu.";
+        s += "\t\t\t" + GameName + " - " + getGameVersionS() + "\n\n";
+        s += "\n %s".formatted(menuTitle);n++;
+        while(inputcode!=0){
+            ClearConsole();
+            System.out.println(s);
+            inputcode = keyboard.nextInt();
+        }
+        ShowMainMenu();
+        lvl = null;
+        
+    }
     private void StartComputerMove() {
 
         for (Droid computerdroid : currentPlayer.get_Droids()) {
